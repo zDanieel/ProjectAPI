@@ -8,6 +8,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Swashbuckle.AspNetCore.Swagger;
+using AutoMapper;
+using System;
 
 namespace ProjectAPI.API
 {
@@ -30,6 +32,9 @@ namespace ProjectAPI.API
             services.AddScoped<BaseService<Post>, BaseService<Post>>();            
             services.AddScoped<BaseModel<Post>, BaseModel<Post>>();
 
+            services.AddScoped<ExtendedWithNameService<Customer>, ExtendedWithNameService<Customer>>();
+            services.AddScoped<BaseModelWithNameConstraint<Customer>, BaseModelWithNameConstraint<Customer>>();
+            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
             //Agregar cadena de conexion al contexto
             services.AddDbContext<JujuTestContext>(options =>

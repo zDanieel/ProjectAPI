@@ -1,9 +1,6 @@
 ﻿using DataAccess.Data;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 
 namespace DataAccess
 {
@@ -73,7 +70,6 @@ namespace DataAccess
         /// <returns></returns>
         public virtual TEntity Update(TEntity editedEntity, TEntity originalEntity, out bool changed)
         {
-
             _context.Entry(originalEntity).CurrentValues.SetValues(editedEntity);
 
             changed = _context.Entry(originalEntity).State == EntityState.Modified;
@@ -98,7 +94,6 @@ namespace DataAccess
 
             return entity;
         }
-
 
         /// <summary>
         /// Guardar cambios

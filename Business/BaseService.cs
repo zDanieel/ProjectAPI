@@ -1,8 +1,5 @@
 ﻿using DataAccess;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 
 namespace Business
 {
@@ -27,16 +24,23 @@ namespace Business
         }
 
         /// <summary>
+        /// Consulta por Id
+        /// /// <param name="Id"></param>
+        /// </summary>
+        public virtual TEntity GetById(int entityId)
+        {
+            return _BaseModel.FindById(entityId);
+        }
+
+        /// <summary>
         /// Crea un entidad (Guarda)
         /// </summary>
         /// <param name="entity"></param>
         /// <returns></returns>
         public virtual TEntity Create(TEntity entity)
         {
-
             return _BaseModel.Create(entity);
         }
-
 
         /// <summary>
         /// Actualiza la entidad (GUARDA)
@@ -55,11 +59,12 @@ namespace Business
         /// <summary>
         /// Elimina una entidad (Guarda)
         /// </summary>
-        /// <param name="entity"></param>
+        /// <param name="entityId"></param>
         /// <returns></returns>
-        public virtual TEntity Delete(TEntity entity)
+        public virtual TEntity Delete(int entityId)
         {
-            return _BaseModel.Delete(entity);
+            TEntity originalEntity = _BaseModel.FindById(entityId);
+            return _BaseModel.Delete(originalEntity);
         }
 
         /// <summary>
