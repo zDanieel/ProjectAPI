@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace API.Models
 {
-    public class GenericResponse
+    public class GenericResponseApi<T>
     {
-        public GenericResponse()
+        public GenericResponseApi()
         {
             ErrorCode = "";
             ErrorMessage = "";
@@ -15,5 +16,6 @@ namespace API.Models
         public string ErrorMessage { get; set; }
         public string MessangeInfo { get; set; } 
         public long ElementsCount { get; set; }
+        public IEnumerable<T> Data { get; set; }
     }
 }

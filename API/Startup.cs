@@ -10,6 +10,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Swashbuckle.AspNetCore.Swagger;
 using AutoMapper;
 using System;
+using Business.Interfaces;
+using DataAccess.Interfaces;
 
 namespace API
 {
@@ -27,13 +29,15 @@ namespace API
         {
             //Servicios                      
             services.AddScoped<JujuTestContext, JujuTestContext>();
-            services.AddScoped<BaseService<Customer>, BaseService<Customer>>();
-            services.AddScoped<BaseModel<Customer>, BaseModel<Customer>>();
-            services.AddScoped<BaseService<Post>, BaseService<Post>>();
-            services.AddScoped<BaseModel<Post>, BaseModel<Post>>();
+            services.AddScoped<IBaseService<Customer>, BaseService<Customer>>();
+            services.AddScoped<IBaseModel<Customer>, BaseModel<Customer>>();
+            services.AddScoped<IBaseService<Post>, BaseService<Post>>();
+            services.AddScoped<IBaseModel<Post>, BaseModel<Post>>();
 
-            services.AddScoped<ServiceCustomer<Customer>, ServiceCustomer<Customer>>();
-            services.AddScoped<RepositoryCustomer<Customer>, RepositoryCustomer<Customer>>();
+            services.AddScoped<IPostService, PostService>();
+            services.AddScoped<ICustomerService<Customer>, CustomerService>();
+            services.AddScoped<IRepositoryCustomer<Customer>, RepositoryCustomer<Customer>>();
+
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
             //Agregar cadena de conexion al contexto

@@ -3,14 +3,16 @@ using Microsoft.AspNetCore.Mvc;
 using PostEntity = DataAccess.Data.Post;
 using CustomerEntity = DataAccess.Data.Customer;
 using Business.Dtos;
-using API.Models.Post;
 using Business.Utilities;
 using Business.Utilities.Enum;
 using AutoMapper;
 using System;
-using API.Models.Customer;
 using Serilog;
 using Microsoft.AspNetCore.Http;
+using System.Linq;
+using System.Collections.Generic;
+using API.Models;
+using Business.Interfaces;
 
 namespace API.Controllers
 {
@@ -18,56 +20,141 @@ namespace API.Controllers
     [Route("api/[controller]")]
     public class PostController : ControllerBase
     {
-        private readonly BaseService<PostEntity> _postService;
-        private readonly BaseService<CustomerEntity> _customerService;
-        private readonly IMapper _mapper;
+        #region Attributes
+        private readonly IPostService _postService;
+        private readonly ICustomerService<CustomerEntity> _customerService;
+        #endregion
 
-        public PostController(BaseService<PostEntity> postService, BaseService<CustomerEntity> customerService, IMapper mapper)
+        #region Constructor
+        public PostController(IPostService postService, ICustomerService<CustomerEntity> customerService)
         {
             _postService = postService;
             _customerService = customerService;
-            _mapper = mapper;
         }
+        #endregion
 
+        #region Methods
         [HttpGet("posts")]
         public IActionResult GetAll()
         {
-            return Ok(_postService.GetAll());
+            try
+            {
+                var posts = _postService.GetAll();
+                if(posts != null)
+                {
+                    return Ok(new GenericResponseApi<PostWebModel>()
+                    {
+                        ElementsCount = posts.Count(),
+                        ErrorCode = "NONE",
+                        ErrorMessage = "NONE",
+                        Succes = true,
+                        MessangeInfo = "Customer results found",
+                        Data = posts.Select(x => new PostWebModel() 
+                        { 
+                            Body = x.Body,  
+                            Category = x.Category, 
+                            CustomerId = x.CustomerId, 
+                            Id = x.PostId, 
+                            Title = x.Title, 
+                            Type = x.Type 
+                        })
+                    });
+                }
+                else
+                {
+                    return NotFound(new GenericResponseApi<PostWebModel>()
+                    {
+                        ElementsCount = 0,
+                        ErrorCode = "NONE",
+                        ErrorMessage = "NONE",
+                        Succes = false,
+                        MessangeInfo = "No posts results found",
+                        Data = null,
+                    });
+                }
+            }
+            catch(Exception ex)
+            {
+                var error = ErrorCode.ErrorFindPost;
+                var errorMessage = ErrorMessages.GetMessage((int)error);
+                Log.Error(ex, $"An error occurred while fetching posts: {errorMessage}", ex.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, new GenericResponseApi<PostWebModel>()
+                {
+                    Succes = false,
+                    ErrorCode = ((int)ErrorCode.ErrorFindCustomers).ToString(),
+                    ErrorMessage = errorMessage,
+                });
+            }
         }
 
-        [HttpPost()]
+        [HttpPost]
         public IActionResult Create([FromBody] PostDTO entityDto)
         {
             try
             {
+                if(entityDto == null)
+                {
+                    return BadRequest(new GenericResponseApi<PostWebModel>()
+                    {
+                        Succes = false,
+                        Data = null,
+                        ElementsCount = 0,
+                        MessangeInfo = "Invalid input data"
+                    });
+                }
+
                 var customer = _customerService.GetById(entityDto.CustomerId);
                 if (customer == null)
                 {
-                    return NotFound(new PostWebModelResponse());
+                    return NotFound(new GenericResponseApi<PostWebModel>()
+                    {
+                        Succes = false,
+                        Data = null,
+                        ElementsCount = 0,
+                        MessangeInfo = "Customer does not exist"
+                    });
                 }
 
-                if (!string.IsNullOrEmpty(entityDto.Body) && entityDto.Body.Length > 20)
+                var result = _postService.CreatePost(entityDto);
+
+                if(result == null)
                 {
-                    entityDto.Body = entityDto.Body.Substring(0, 97) + "...";
+                    return BadRequest(new GenericResponseApi<PostWebModel>()
+                    {
+                        Succes = false,
+                        Data = null,
+                        ElementsCount = 0,
+                        MessangeInfo = "Error creating post. Please check your input data."
+                    });
                 }
 
-                if (entityDto.Type >= 1 || entityDto.Type <= 3)
+                return Ok(new GenericResponseApi<PostWebModel>()
                 {
-                    entityDto.Category = GetCategory((PostType)entityDto.Type);
-                }
-
-                var postEntity = _mapper.Map<PostEntity>(entityDto);
-                var result = _postService.Create(postEntity);
-
-                return Ok(new PostWebModelResponse());
-               
+                    ElementsCount = 1,
+                    ErrorCode = "NONE",
+                    ErrorMessage = "NONE",
+                    Succes = true,
+                    MessangeInfo = "Post created successfully",
+                    Data = new List<PostWebModel>
+                    {
+                        new PostWebModel
+                        {
+                            Body = result.Body,
+                            Category = result.Category,
+                            CustomerId = result.CustomerId,
+                            Id = result.PostId,
+                            Title = result.Title,
+                            Type = result.Type,
+                        }
+                    }
+                });               
             }
             catch(Exception ex)
             {
                 var error = ErrorCode.ErrorCreatePost;
                 var errorMessage = ErrorMessages.GetMessage((int)error);
-                Log.Error(ex, $"An error occurred while creating a customer: {errorMessage}", ex.Message);
-                return StatusCode(StatusCodes.Status500InternalServerError, new CustomerWebModelResponse
+                Log.Error(ex, $"An error occurred while creating a post: {errorMessage}", ex.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, new GenericResponseApi<PostWebModel>()
                 {
                     Succes = false,
                     ErrorCode = ((int)error).ToString(),
@@ -87,10 +174,6 @@ namespace API.Controllers
         {
             return Ok(_postService.Create(entity));
         }
-
-        private string GetCategory(PostType type)
-        {
-            return type.GetDescription();
-        }
+        #endregion
     }
 }

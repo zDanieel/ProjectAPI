@@ -1,15 +1,15 @@
-﻿using DataAccess;
-using Microsoft.EntityFrameworkCore;
+﻿using Business.Interfaces;
+using DataAccess.Interfaces;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Business
 {
-    public class BaseService<TEntity> where TEntity : class, new()
+    public class BaseService<TEntity> : IBaseService<TEntity> where TEntity : class, new()
     {
-        protected BaseModel<TEntity> _BaseModel;
+        protected IBaseModel<TEntity> _BaseModel;
 
-        public BaseService(BaseModel<TEntity> baseModel)
+        public BaseService(IBaseModel<TEntity> baseModel)
         {
             _BaseModel = baseModel;
         }
@@ -87,7 +87,5 @@ namespace Business
             _BaseModel.SaveChanges();
         }
         #endregion
-
-
     }
 }

@@ -1,7 +1,7 @@
-﻿using API.Models.Customer;
-using AutoMapper;
+﻿using API.Models;
 using Business;
 using Business.Dtos;
+using Business.Interfaces;
 using Business.Utilities;
 using Business.Utilities.Enum;
 using Microsoft.AspNetCore.Http;
@@ -20,17 +20,15 @@ namespace API.Controllers
     public class CustomerController : ControllerBase
     {
         #region Properties
-        private readonly ServiceCustomer<CustomerEntity> _customerService;
-        private readonly BaseService<PostEntity> _postService;
-        private readonly IMapper _mapper;
+        private readonly ICustomerService<CustomerEntity> _customerService;
+        private readonly IBaseService<PostEntity> _postService;
         #endregion
 
         #region Constructor
-        public CustomerController(ServiceCustomer<CustomerEntity> customerService, BaseService<PostEntity> postService, IMapper mapper)
+        public CustomerController(ICustomerService<CustomerEntity> customerService, IBaseService<PostEntity> postService)
         {
             _customerService = customerService;
             _postService = postService;
-            _mapper = mapper;
         }
         #endregion
 
@@ -43,27 +41,31 @@ namespace API.Controllers
                 var customers = _customerService.GetAll();
                 if (customers != null)
                 {
-                    return Ok(new CustomerWebModelResponse()
+                    return Ok(new GenericResponseApi<CustomerWebModel>()
                     {
                         ElementsCount = customers.Count(),
                         ErrorCode = "NONE",
                         ErrorMessage = "NONE",
                         Succes = true,
                         MessangeInfo = "Customer results found", 
-                        Customers = customers.Select(x => new CustomerWebModel() { Id = x.CustomerId, Name = x.Name }),
+                        Data = customers.Select(x => new CustomerWebModel() 
+                        { 
+                            Id = x.CustomerId, 
+                            Name = x.Name 
+                        }),
 
                     });
                 }
                 else
                 {
-                    return NotFound(new CustomerWebModelResponse()
+                    return NotFound(new GenericResponseApi<CustomerWebModel>()
                     {
                         ElementsCount = 0,
                         ErrorCode = "NONE",
                         ErrorMessage = "NONE",
                         Succes = false,
                         MessangeInfo = "No customer results found",
-                        Customers = null,
+                        Data = null,
                     });
                 }
 
@@ -73,7 +75,7 @@ namespace API.Controllers
                 var error = ErrorCode.ErrorFindCustomers;
                 var errorMessage = ErrorMessages.GetMessage((int)error);
                 Log.Error(ex, $"An error occurred while fetching customers: {errorMessage}", ex.Message);
-                return StatusCode(StatusCodes.Status500InternalServerError, new CustomerWebModelResponse()
+                return StatusCode(StatusCodes.Status500InternalServerError, new GenericResponseApi<CustomerWebModel>()
                 {
                     Succes = false,
                     ErrorCode = ((int)ErrorCode.ErrorFindCustomers).ToString(),
@@ -90,10 +92,10 @@ namespace API.Controllers
             {
                 if (entityDto == null)
                 {
-                    return BadRequest(new CustomerWebModelResponse
+                    return BadRequest(new GenericResponseApi<CustomerWebModel>()
                     {
                         Succes = false,
-                        Customers = null,
+                        Data = null,
                         ElementsCount = 0,
                         MessangeInfo = "Invalid input data"
                     });
@@ -103,27 +105,43 @@ namespace API.Controllers
 
                 if (exist)
                 {
-                    return Conflict(new CustomerWebModelResponse
+                    return Conflict(new GenericResponseApi<CustomerWebModel>()
                     {
                         Succes = false,
-                        Customers = null,
+                        Data = null,
                         ElementsCount = 0,
                         MessangeInfo = "The customer already exists"
                     });
                 }
 
-                var customerEntity = _mapper.Map<CustomerEntity>(entityDto);
+                var createdCustomer = _customerService.CreateCustomer(entityDto);
 
-                var createdCustomer = _customerService.Create(customerEntity);
+                if(createdCustomer == null)
+                {
+                    return BadRequest(new GenericResponseApi<CustomerWebModel>()
+                    {
+                        Succes = false,
+                        Data = null,
+                        ElementsCount = 0,
+                        MessangeInfo = "Error creating customer. Please check your input data."
+                    });
+                }
 
-                return Ok(new CustomerWebModelResponse
+                return Ok(new GenericResponseApi<CustomerWebModel>()
                 {
                     ElementsCount = 1,
                     ErrorCode = "NONE",
                     ErrorMessage = "NONE",
                     Succes = true,
                     MessangeInfo = "Customer created successfully",
-                    Customers = new List<CustomerWebModel> { new CustomerWebModel { Id = createdCustomer.CustomerId, Name = createdCustomer.Name } }
+                    Data = new List<CustomerWebModel> 
+                    { 
+                        new CustomerWebModel     
+                        { 
+                            Id = createdCustomer.CustomerId, 
+                            Name = createdCustomer.Name 
+                        } 
+                    }
                 });
             }
             catch (Exception ex)
@@ -131,7 +149,7 @@ namespace API.Controllers
                 var error = ErrorCode.ErrorCreateCustomer;
                 var errorMessage = ErrorMessages.GetMessage((int)error);
                 Log.Error(ex, $"An error occurred while creating a customer: {errorMessage}", ex.Message);
-                return StatusCode(StatusCodes.Status500InternalServerError, new CustomerWebModelResponse
+                return StatusCode(StatusCodes.Status500InternalServerError, new GenericResponseApi<CustomerWebModel>()
                 {
                     Succes = false,
                     ErrorCode = ((int)error).ToString(),
@@ -147,10 +165,10 @@ namespace API.Controllers
             {
                 if (id <= 0)
                 {
-                    return BadRequest(new CustomerWebModelResponse
+                    return BadRequest(new GenericResponseApi<CustomerWebModel>()
                     {
                         Succes = false,
-                        Customers = null,
+                        Data = null,
                         ElementsCount = 0,
                         MessangeInfo = "Invalid customer ID"
                     });
@@ -158,23 +176,22 @@ namespace API.Controllers
 
                 if (entityDto == null)
                 {
-                    return BadRequest(new CustomerWebModelResponse
+                    return BadRequest(new GenericResponseApi<CustomerWebModel>()
                     {
                         Succes = false,
-                        Customers = null,
+                        Data = null,
                         ElementsCount = 0,
                         MessangeInfo = "Invalid input data"
                     });
                 }
 
-
                 var existingCustomer = _customerService.GetById(id);
                 if (existingCustomer == null)
                 {
-                    return NotFound(new CustomerWebModelResponse
+                    return NotFound(new GenericResponseApi<CustomerWebModel>()
                     {
                         Succes = false,
-                        Customers = null,
+                        Data = null,
                         ElementsCount = 0,
                         MessangeInfo = "Customer not found"
                     });
@@ -183,27 +200,43 @@ namespace API.Controllers
                 var nameExists = _customerService.CheckIfNameExists(entityDto.Name);
                 if (nameExists || entityDto.Name == existingCustomer.Name)
                 {
-                    return Conflict(new CustomerWebModelResponse
+                    return Conflict(new GenericResponseApi<CustomerWebModel>()
                     {
                         Succes = false,
-                        Customers = null,
+                        Data = null,
                         ElementsCount = 0,
                         MessangeInfo = "The customer name already exists"
                     });
                 }
 
-                var customerEntity = _mapper.Map(entityDto, existingCustomer);
+                var (updatedCustomer, changed) = _customerService.UpdateCustomer(entityDto);
 
-                var result = _customerService.Update(customerEntity.CustomerId, customerEntity, out bool changed);
+                if (!changed)
+                {
+                    return NotFound(new GenericResponseApi<CustomerWebModel>()
+                    {
+                        Succes = false,
+                        Data = null,
+                        ElementsCount = 0,
+                        MessangeInfo = "Customer not found"
+                    });
+                }
 
-                return Ok(new CustomerWebModelResponse
+                return Ok(new GenericResponseApi<CustomerWebModel>()
                 {
                     ElementsCount = 1,
                     ErrorCode = "NONE",
                     ErrorMessage = "NONE",
                     Succes = true,
                     MessangeInfo = "Customer updated successfully",
-                    Customers = new List<CustomerWebModel> { new CustomerWebModel { Id = result.CustomerId, Name = result.Name } }
+                    Data = new List<CustomerWebModel>
+                    {
+                        new CustomerWebModel 
+                        { 
+                            Id = updatedCustomer.CustomerId, 
+                            Name = updatedCustomer.Name 
+                        } 
+                    }
                 });
             }
             catch (Exception ex)
@@ -211,7 +244,7 @@ namespace API.Controllers
                 var error = ErrorCode.ErrorUpdateCustomer;
                 var errorMessage = ErrorMessages.GetMessage((int)error);
                 Log.Error(ex, $"An error occurred while updating a customer: {errorMessage}", ex.Message);
-                return StatusCode(StatusCodes.Status500InternalServerError, new CustomerWebModelResponse
+                return StatusCode(StatusCodes.Status500InternalServerError, new GenericResponseApi<CustomerWebModel>()
                 {
                     Succes = false,
                     ErrorCode = ((int)error).ToString(),
@@ -227,22 +260,22 @@ namespace API.Controllers
             {
                 if (id <= 0)
                 {
-                    return BadRequest(new CustomerWebModelResponse
+                    return BadRequest(new GenericResponseApi<CustomerWebModel>()
                     {
                         Succes = false,
-                        Customers = null,
+                        Data = null,
                         ElementsCount = 0,
                         MessangeInfo = "c customer ID"
                     });
                 }
 
-                var existingCustomer = _customerService.GetCustomers(id);
+                var existingCustomer = _customerService.GetCustomer(id);
                 if (existingCustomer == null)
                 {
-                    return NotFound(new CustomerWebModelResponse
+                    return NotFound(new GenericResponseApi<CustomerWebModel>()
                     {
                         Succes = false,
-                        Customers = null,
+                        Data = null,
                         ElementsCount = 0,
                         MessangeInfo = "Customer not found"
                     });
@@ -252,14 +285,21 @@ namespace API.Controllers
 
                 var result = _customerService.Delete(existingCustomer.CustomerId);
 
-                return Ok(new CustomerWebModelResponse
+                return Ok(new GenericResponseApi<CustomerWebModel>()
                 {
                     ElementsCount = 1,
                     ErrorCode = "NONE",
                     ErrorMessage = "NONE",
                     Succes = true,
                     MessangeInfo = "Customer deleted successfully",
-                    Customers = new List<CustomerWebModel> { new CustomerWebModel { Id = result.CustomerId, Name = result.Name } }
+                    Data = new List<CustomerWebModel> 
+                    { 
+                        new CustomerWebModel 
+                        { 
+                            Id = result.CustomerId, 
+                            Name = result.Name 
+                        } 
+                    }
                 });
             }
             catch (Exception ex)
@@ -267,7 +307,7 @@ namespace API.Controllers
                 var error = ErrorCode.ErrorDeleteCustomer;
                 var errorMessage = ErrorMessages.GetMessage((int)error);
                 Log.Error(ex, $"An error occurred while deleting a customer: {errorMessage}", ex.Message);
-                return StatusCode(StatusCodes.Status500InternalServerError, new CustomerWebModelResponse
+                return StatusCode(StatusCodes.Status500InternalServerError, new GenericResponseApi<CustomerWebModel>()
                 {
                     Succes = false,
                     ErrorCode = ((int)error).ToString(),
