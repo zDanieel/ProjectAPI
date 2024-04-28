@@ -25,6 +25,10 @@ namespace DataAccess.Data
             modelBuilder.Entity<Customer>(entity =>
             {
                 entity.Property(e => e.Name).HasMaxLength(500);
+                entity.HasMany(c => c.Posts)   
+                      .WithOne(p => p.Customer)  
+                      .HasForeignKey(p => p.CustomerId)  
+                      .OnDelete(DeleteBehavior.Cascade); 
             });
 
             modelBuilder.Entity<Logs>(entity =>
@@ -39,7 +43,15 @@ namespace DataAccess.Data
                 entity.Property(e => e.Category).HasMaxLength(500);
 
                 entity.Property(e => e.Title).HasMaxLength(500);
+
+                entity.HasOne(p => p.Customer)
+                    .WithMany(c => c.Posts)
+                    .HasForeignKey(p => p.CustomerId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
+
+            
+            
         }
     }
 }

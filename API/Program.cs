@@ -2,12 +2,11 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging.Console;
 using Serilog;
 using System;
 using System.IO;
 
-namespace ProjectAPI.API
+namespace API
 {
     public class Program
     {
@@ -21,7 +20,7 @@ namespace ProjectAPI.API
         {
             Log.Logger = new LoggerConfiguration()
                 .ReadFrom.Configuration(Configuration)
-                .CreateLogger();      
+                .CreateLogger();
 
             try
             {

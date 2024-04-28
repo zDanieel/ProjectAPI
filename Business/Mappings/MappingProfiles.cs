@@ -9,6 +9,7 @@ namespace Business.Mappings
         public MappingProfiles()
         {
             CreateMap<CustomerDTO, Customer>();
+            CreateMap<PostDTO, Post>();
         }
     }
 }

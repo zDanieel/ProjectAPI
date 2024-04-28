@@ -11,10 +11,9 @@ namespace API.Models
         }
 
         public bool Succes { get; set; }
-        public string ErrorCode { get; set; }
-
+        public string ErrorCode { get; set; } 
         public string ErrorMessage { get; set; }
-
+        public string MessangeInfo { get; set; } 
         public long ElementsCount { get; set; }
     }
 }

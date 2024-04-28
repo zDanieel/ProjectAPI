@@ -1,6 +1,9 @@
 ﻿using DataAccess.Data;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace DataAccess
 {
@@ -43,8 +46,6 @@ namespace DataAccess
         {
             return _dbSet.Find(id);
         }
-
-
 
         /// <summary>
         /// Crea un entidad (Guarda)
@@ -96,11 +97,32 @@ namespace DataAccess
         }
 
         /// <summary>
+        /// Elimina una lista de entidades (Guarda)
+        /// </summary>
+        /// <param name="entities"></param>
+        /// <returns></returns>
+        public virtual void DeleteRange(IEnumerable<TEntity> entities)
+        {
+            _dbSet.RemoveRange(entities);
+            _context.SaveChanges();
+        }
+
+        /// <summary>
         /// Guardar cambios
         /// </summary>
         public virtual void SaveChanges()
         {
             _context.SaveChanges();
+        }
+
+        public virtual TEntity Include(params Expression<Func<TEntity, object>>[] includes)
+        {
+            IQueryable<TEntity> query = _dbSet;
+            foreach (var include in includes)
+            {
+                query = query.Include(include);
+            }
+            return query.FirstOrDefault();
         }
     }
 }

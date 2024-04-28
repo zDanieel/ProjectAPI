@@ -11,7 +11,7 @@ using Swashbuckle.AspNetCore.Swagger;
 using AutoMapper;
 using System;
 
-namespace ProjectAPI.API
+namespace API
 {
     public class Startup
     {
@@ -29,11 +29,11 @@ namespace ProjectAPI.API
             services.AddScoped<JujuTestContext, JujuTestContext>();
             services.AddScoped<BaseService<Customer>, BaseService<Customer>>();
             services.AddScoped<BaseModel<Customer>, BaseModel<Customer>>();
-            services.AddScoped<BaseService<Post>, BaseService<Post>>();            
+            services.AddScoped<BaseService<Post>, BaseService<Post>>();
             services.AddScoped<BaseModel<Post>, BaseModel<Post>>();
 
-            services.AddScoped<ExtendedWithNameService<Customer>, ExtendedWithNameService<Customer>>();
-            services.AddScoped<BaseModelWithNameConstraint<Customer>, BaseModelWithNameConstraint<Customer>>();
+            services.AddScoped<ServiceCustomer<Customer>, ServiceCustomer<Customer>>();
+            services.AddScoped<RepositoryCustomer<Customer>, RepositoryCustomer<Customer>>();
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
             //Agregar cadena de conexion al contexto

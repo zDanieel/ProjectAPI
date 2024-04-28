@@ -2,10 +2,8 @@
 using AutoMapper;
 using Business;
 using Business.Dtos;
-using Business.ErrorUtilities;
-using Business.ErrorUtilities.Enum;
-using DataAccess;
-using DataAccess.Data;
+using Business.Utilities;
+using Business.Utilities.Enum;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
@@ -13,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using CustomerEntity = DataAccess.Data.Customer;
+using PostEntity = DataAccess.Data.Post;
 
 namespace API.Controllers
 {
@@ -21,14 +20,16 @@ namespace API.Controllers
     public class CustomerController : ControllerBase
     {
         #region Properties
-        private readonly ExtendedWithNameService<CustomerEntity> _customerService;
+        private readonly ServiceCustomer<CustomerEntity> _customerService;
+        private readonly BaseService<PostEntity> _postService;
         private readonly IMapper _mapper;
         #endregion
 
         #region Constructor
-        public CustomerController(ExtendedWithNameService<CustomerEntity> customerService, IMapper mapper)
+        public CustomerController(ServiceCustomer<CustomerEntity> customerService, BaseService<PostEntity> postService, IMapper mapper)
         {
             _customerService = customerService;
+            _postService = postService;
             _mapper = mapper;
         }
         #endregion
@@ -82,7 +83,7 @@ namespace API.Controllers
 
         }
 
-        [HttpPost("customer")]
+        [HttpPost]
         public IActionResult Create([FromBody] CustomerDTO entityDto)
         {
             try
@@ -139,7 +140,7 @@ namespace API.Controllers
             }
         }
 
-        [HttpPut("customer/{id}")]
+        [HttpPut("{id}")]
         public IActionResult Update(int id, [FromBody] CustomerDTO entityDto)
         {
             try
@@ -195,26 +196,15 @@ namespace API.Controllers
 
                 var result = _customerService.Update(customerEntity.CustomerId, customerEntity, out bool changed);
 
-                if(result != null)
+                return Ok(new CustomerWebModelResponse
                 {
-                    return Ok(new CustomerWebModelResponse
-                    {
-                        ElementsCount = 1,
-                        ErrorCode = "NONE",
-                        ErrorMessage = "NONE",
-                        Succes = true,
-                        MessangeInfo = "Customer updated successfully",
-                        Customers = new List<CustomerWebModel> { new CustomerWebModel { Id = result.CustomerId, Name = result.Name } }
-                    });
-                }
-
-                return StatusCode(StatusCodes.Status500InternalServerError, new CustomerWebModelResponse
-                {
-                    Succes = false,
+                    ElementsCount = 1,
                     ErrorCode = "NONE",
-                    ErrorMessage = "",
+                    ErrorMessage = "NONE",
+                    Succes = true,
+                    MessangeInfo = "Customer updated successfully",
+                    Customers = new List<CustomerWebModel> { new CustomerWebModel { Id = result.CustomerId, Name = result.Name } }
                 });
-
             }
             catch (Exception ex)
             {
@@ -230,7 +220,7 @@ namespace API.Controllers
             }
         }
 
-        [HttpDelete("customer/{id}")]
+        [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
             try
@@ -246,7 +236,7 @@ namespace API.Controllers
                     });
                 }
 
-                var existingCustomer = _customerService.GetById(id);
+                var existingCustomer = _customerService.GetCustomers(id);
                 if (existingCustomer == null)
                 {
                     return NotFound(new CustomerWebModelResponse
@@ -257,6 +247,8 @@ namespace API.Controllers
                         MessangeInfo = "Customer not found"
                     });
                 }
+
+                _postService.DeleteRange(existingCustomer.Posts);
 
                 var result = _customerService.Delete(existingCustomer.CustomerId);
 

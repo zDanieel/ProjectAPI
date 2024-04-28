@@ -1,4 +1,6 @@
 ﻿using DataAccess;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Business
@@ -65,6 +67,16 @@ namespace Business
         {
             TEntity originalEntity = _BaseModel.FindById(entityId);
             return _BaseModel.Delete(originalEntity);
+        }
+
+        /// <summary>
+        /// Elimina una entidad (Guarda)
+        /// </summary>
+        /// <param name="entityId"></param>
+        /// <returns></returns>
+        public virtual void DeleteRange(IEnumerable<TEntity> entities)
+        {
+           _BaseModel.DeleteRange(entities);   
         }
 
         /// <summary>

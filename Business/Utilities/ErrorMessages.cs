@@ -1,7 +1,6 @@
-﻿
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
-namespace Business.ErrorUtilities
+namespace Business.Utilities
 {
     public static class ErrorMessages
     {
@@ -10,7 +9,11 @@ namespace Business.ErrorUtilities
             { 1, "Error find customers" },
             { 2, "Error creating customer" },
             { 3, "Error update customer" },
-            { 4, "Error delete customer" }
+            { 4, "Error delete customer" },
+            { 5, "Error find posts" },
+            { 6, "Error creating post" },
+            { 7, "Error update post" },
+            { 8, "Error delete post" }
         };
 
         public static string GetMessage(int errorCode)
