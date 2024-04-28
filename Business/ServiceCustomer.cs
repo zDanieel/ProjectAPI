@@ -5,22 +5,22 @@ namespace Business
 {
     public class ServiceCustomer<TEntity> : BaseService<TEntity> where TEntity : Customer, new()
     {
-        private readonly RepositoryCustomer<TEntity> _baseModelWithNameConstraint;
+        private readonly RepositoryCustomer<TEntity> _serviceCustomer;
 
-        public ServiceCustomer(RepositoryCustomer<TEntity> baseModelWithNameConstraint) : base(baseModelWithNameConstraint)
+        public ServiceCustomer(RepositoryCustomer<TEntity> serviceCustomer) : base(serviceCustomer)
         {
-            _baseModelWithNameConstraint = baseModelWithNameConstraint;
+            _serviceCustomer = serviceCustomer;
         }
 
         public bool CheckIfNameExists(string name)
         {
-            return _baseModelWithNameConstraint.CheckIfNameExists(name);
+            return _serviceCustomer.CheckIfNameExists(name);
         }
 
         public Customer GetCustomers(int id)
         {
-            var customer = _baseModelWithNameConstraint.FindById(id);
-            return  _baseModelWithNameConstraint.Include(c => c.Posts);
+            var customer = _serviceCustomer.FindById(id);
+            return  _serviceCustomer.Include(c => c.Posts);
         }
     }
 }
