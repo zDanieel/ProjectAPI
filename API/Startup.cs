@@ -34,8 +34,8 @@ namespace API
             services.AddScoped<IBaseService<Post>, BaseService<Post>>();
             services.AddScoped<IBaseModel<Post>, BaseModel<Post>>();
 
-            services.AddScoped<IPostService, PostService>();
-            services.AddScoped<ICustomerService<Customer>, CustomerService>();
+            services.AddScoped<IPostManager, PostManager>();
+            services.AddScoped<ICustomerManager<Customer>, CustomerManager>();
             services.AddScoped<IRepositoryCustomer<Customer>, RepositoryCustomer<Customer>>();
 
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

@@ -2,20 +2,17 @@
 using Business.Dtos;
 using Business.Interfaces;
 using Business.Utilities.Enum;
-using DataAccess;
 using DataAccess.Data;
-using System;
+using DataAccess.Interfaces;
 
 namespace Business
 {
-    public class PostService : BaseService<Post>, IPostService
+    public class PostManager : BaseService<Post>, IPostManager
     {
-        private readonly IBaseService<Customer> _customerService;
         private readonly IMapper _mapper;
 
-        public PostService(BaseModel<Post> baseModel, IBaseService<Customer> customerService, IMapper mapper) : base(baseModel)
+        public PostManager(IBaseModel<Post> baseModel, IMapper mapper) : base(baseModel)
         {
-            _customerService = customerService;
             _mapper = mapper;
         }
 
@@ -34,6 +31,11 @@ namespace Business
             var postEntity = _mapper.Map<Post>(postDto);
 
             return Create(postEntity);
+        }
+
+        public (Post post, bool changed) UpdatePost(Post postEntity)
+        {
+            return (Update(postEntity.PostId, postEntity, out bool changed), changed);
         }
 
         private string GetCategory(PostType type)

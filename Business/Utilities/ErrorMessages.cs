@@ -13,7 +13,8 @@ namespace Business.Utilities
             { 5, "Error find posts" },
             { 6, "Error creating post" },
             { 7, "Error update post" },
-            { 8, "Error delete post" }
+            { 8, "Error delete post" },
+            { 9, "Error creating multiple posts" }
         };
 
         public static string GetMessage(int errorCode)

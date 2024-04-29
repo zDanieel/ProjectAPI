@@ -10,5 +10,6 @@
         ErrorCreatePost = 6,
         ErrorUpdatePost = 7,
         ErrorDeletePost = 8,
+        ErrorCreatingMultiplePosts = 9,
     }
 }

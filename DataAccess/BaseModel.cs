@@ -116,14 +116,19 @@ namespace DataAccess
             _context.SaveChanges();
         }
 
-        public virtual TEntity Include(params Expression<Func<TEntity, object>>[] includes)
+        // <summary>
+        /// Incluye las propiedades especificadas de la entidad en la consulta.
+        /// </summary>
+        /// <param name="includes">Expresiones que especifican las propiedades que se incluirán en la consulta.</param>
+        /// <returns>Una consulta IQueryable que incluye las propiedades especificadas.</returns>
+        public virtual IQueryable<TEntity> Include(params Expression<Func<TEntity, object>>[] includes)
         {
             IQueryable<TEntity> query = _dbSet;
             foreach (var include in includes)
             {
                 query = query.Include(include);
             }
-            return query.FirstOrDefault();
+            return query;
         }
     }
 }

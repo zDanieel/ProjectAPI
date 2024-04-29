@@ -4,17 +4,18 @@ using Business.Interfaces;
 using DataAccess;
 using DataAccess.Data;
 using DataAccess.Interfaces;
+using System.Linq;
 
 namespace Business
 {
-    public class CustomerService : BaseService<Customer>, ICustomerService<Customer>
+    public class CustomerManager : BaseService<Customer>, ICustomerManager<Customer>
     {
         private readonly IRepositoryCustomer<Customer> _repositoryCustomer;
         private readonly IMapper _mapper;
 
-        public CustomerService(IRepositoryCustomer<Customer> serviceCustomer, IMapper mapper) : base((BaseModel<Customer>)serviceCustomer)
+        public CustomerManager(IRepositoryCustomer<Customer> repositoryCustomer, IMapper mapper) : base((BaseModel<Customer>)repositoryCustomer)
         {
-            _repositoryCustomer = serviceCustomer;
+            _repositoryCustomer = repositoryCustomer;
             _mapper = mapper;
         }
 
@@ -29,17 +30,16 @@ namespace Business
             return Create(customerEntity);
         }
 
-        public (Customer customer, bool changed) UpdateCustomer(CustomerDTO customerDto)
+        public (Customer customer, bool changed) UpdateCustomer(Customer customerEntity)
         {
-            var customerEntity = _mapper.Map<Customer>(customerDto);
             return (Update(customerEntity.CustomerId, customerEntity, out bool changed), changed);
         }
 
         public Customer GetCustomer(int id)
         {
-            var customer = _repositoryCustomer.FindById(id);
-            return customer;
+            return _repositoryCustomer.Include(c => c.Posts).FirstOrDefault(c => c.CustomerId == id);
         }
+
     }
 
 }

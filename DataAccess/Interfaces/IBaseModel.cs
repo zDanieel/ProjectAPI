@@ -15,6 +15,6 @@ namespace DataAccess.Interfaces
         TEntity Delete(TEntity entity);
         void DeleteRange(IEnumerable<TEntity> entities);
         void SaveChanges();
-        TEntity Include(params Expression<Func<TEntity, object>>[] includes);
+        IQueryable<TEntity> Include(params Expression<Func<TEntity, object>>[] includes);
     }
 }

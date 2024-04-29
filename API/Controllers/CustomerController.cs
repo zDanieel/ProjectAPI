@@ -1,5 +1,4 @@
 ﻿using API.Models;
-using Business;
 using Business.Dtos;
 using Business.Interfaces;
 using Business.Utilities;
@@ -11,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using CustomerEntity = DataAccess.Data.Customer;
-using PostEntity = DataAccess.Data.Post;
 
 namespace API.Controllers
 {
@@ -20,15 +18,15 @@ namespace API.Controllers
     public class CustomerController : ControllerBase
     {
         #region Properties
-        private readonly ICustomerService<CustomerEntity> _customerService;
-        private readonly IBaseService<PostEntity> _postService;
+        private readonly ICustomerManager<CustomerEntity> _customerManager;
+        private readonly IPostManager _postManager;
         #endregion
 
         #region Constructor
-        public CustomerController(ICustomerService<CustomerEntity> customerService, IBaseService<PostEntity> postService)
+        public CustomerController(ICustomerManager<CustomerEntity> customerManager, IPostManager postManager)
         {
-            _customerService = customerService;
-            _postService = postService;
+            _customerManager = customerManager;
+            _postManager = postManager;
         }
         #endregion
 
@@ -38,7 +36,7 @@ namespace API.Controllers
         {
             try
             {
-                var customers = _customerService.GetAll();
+                var customers = _customerManager.GetAll();
                 if (customers != null)
                 {
                     return Ok(new GenericResponseApi<CustomerWebModel>()
@@ -47,11 +45,11 @@ namespace API.Controllers
                         ErrorCode = "NONE",
                         ErrorMessage = "NONE",
                         Succes = true,
-                        MessangeInfo = "Customer results found", 
-                        Data = customers.Select(x => new CustomerWebModel() 
-                        { 
-                            Id = x.CustomerId, 
-                            Name = x.Name 
+                        MessangeInfo = "Customer results found",
+                        Data = customers.Select(x => new CustomerWebModel()
+                        {
+                            Id = x.CustomerId,
+                            Name = x.Name
                         }),
 
                     });
@@ -69,7 +67,7 @@ namespace API.Controllers
                     });
                 }
 
-        }
+            }
             catch (Exception ex)
             {
                 var error = ErrorCode.ErrorFindCustomers;
@@ -101,7 +99,7 @@ namespace API.Controllers
                     });
                 }
 
-                var exist = _customerService.CheckIfNameExists(entityDto.Name);
+                var exist = _customerManager.CheckIfNameExists(entityDto.Name);
 
                 if (exist)
                 {
@@ -114,9 +112,9 @@ namespace API.Controllers
                     });
                 }
 
-                var createdCustomer = _customerService.CreateCustomer(entityDto);
+                var createdCustomer = _customerManager.CreateCustomer(entityDto);
 
-                if(createdCustomer == null)
+                if (createdCustomer == null)
                 {
                     return BadRequest(new GenericResponseApi<CustomerWebModel>()
                     {
@@ -134,13 +132,13 @@ namespace API.Controllers
                     ErrorMessage = "NONE",
                     Succes = true,
                     MessangeInfo = "Customer created successfully",
-                    Data = new List<CustomerWebModel> 
-                    { 
-                        new CustomerWebModel     
-                        { 
-                            Id = createdCustomer.CustomerId, 
-                            Name = createdCustomer.Name 
-                        } 
+                    Data = new List<CustomerWebModel>
+                    {
+                        new CustomerWebModel
+                        {
+                            Id = createdCustomer.CustomerId,
+                            Name = createdCustomer.Name
+                        }
                     }
                 });
             }
@@ -163,29 +161,18 @@ namespace API.Controllers
         {
             try
             {
-                if (id <= 0)
+                if (id <= 0 || entityDto == null)
                 {
                     return BadRequest(new GenericResponseApi<CustomerWebModel>()
                     {
                         Succes = false,
                         Data = null,
                         ElementsCount = 0,
-                        MessangeInfo = "Invalid customer ID"
+                        MessangeInfo = id <= 0 ? "Invalid customer ID" : "Invalid input data"
                     });
                 }
 
-                if (entityDto == null)
-                {
-                    return BadRequest(new GenericResponseApi<CustomerWebModel>()
-                    {
-                        Succes = false,
-                        Data = null,
-                        ElementsCount = 0,
-                        MessangeInfo = "Invalid input data"
-                    });
-                }
-
-                var existingCustomer = _customerService.GetById(id);
+                var existingCustomer = _customerManager.GetById(id);
                 if (existingCustomer == null)
                 {
                     return NotFound(new GenericResponseApi<CustomerWebModel>()
@@ -197,7 +184,7 @@ namespace API.Controllers
                     });
                 }
 
-                var nameExists = _customerService.CheckIfNameExists(entityDto.Name);
+                var nameExists = _customerManager.CheckIfNameExists(entityDto.Name);
                 if (nameExists || entityDto.Name == existingCustomer.Name)
                 {
                     return Conflict(new GenericResponseApi<CustomerWebModel>()
@@ -209,7 +196,11 @@ namespace API.Controllers
                     });
                 }
 
-                var (updatedCustomer, changed) = _customerService.UpdateCustomer(entityDto);
+                var (updatedCustomer, changed) = _customerManager.UpdateCustomer(new CustomerEntity
+                {
+                    CustomerId = existingCustomer.CustomerId,
+                    Name = entityDto.Name
+                });
 
                 if (!changed)
                 {
@@ -231,11 +222,11 @@ namespace API.Controllers
                     MessangeInfo = "Customer updated successfully",
                     Data = new List<CustomerWebModel>
                     {
-                        new CustomerWebModel 
-                        { 
-                            Id = updatedCustomer.CustomerId, 
-                            Name = updatedCustomer.Name 
-                        } 
+                        new CustomerWebModel
+                        {
+                            Id = updatedCustomer.CustomerId,
+                            Name = updatedCustomer.Name
+                        }
                     }
                 });
             }
@@ -253,6 +244,7 @@ namespace API.Controllers
             }
         }
 
+
         [HttpDelete("{id}")]
         public IActionResult Delete(int id)
         {
@@ -265,11 +257,12 @@ namespace API.Controllers
                         Succes = false,
                         Data = null,
                         ElementsCount = 0,
-                        MessangeInfo = "c customer ID"
+                        MessangeInfo = "Invalid customer ID"
                     });
                 }
 
-                var existingCustomer = _customerService.GetCustomer(id);
+                var existingCustomer = _customerManager.GetCustomer(id);
+
                 if (existingCustomer == null)
                 {
                     return NotFound(new GenericResponseApi<CustomerWebModel>()
@@ -281,9 +274,9 @@ namespace API.Controllers
                     });
                 }
 
-                _postService.DeleteRange(existingCustomer.Posts);
+                _postManager.DeleteRange(existingCustomer.Posts);
 
-                var result = _customerService.Delete(existingCustomer.CustomerId);
+                var result = _customerManager.Delete(existingCustomer.CustomerId);
 
                 return Ok(new GenericResponseApi<CustomerWebModel>()
                 {
@@ -292,13 +285,13 @@ namespace API.Controllers
                     ErrorMessage = "NONE",
                     Succes = true,
                     MessangeInfo = "Customer deleted successfully",
-                    Data = new List<CustomerWebModel> 
-                    { 
-                        new CustomerWebModel 
-                        { 
-                            Id = result.CustomerId, 
-                            Name = result.Name 
-                        } 
+                    Data = new List<CustomerWebModel>
+                    {
+                        new CustomerWebModel
+                        {
+                            Id = result.CustomerId,
+                            Name = result.Name
+                        }
                     }
                 });
             }
